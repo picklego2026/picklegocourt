@@ -11,9 +11,16 @@ export async function onRequest({request,env}){
    const b=await request.json(),s=await settings(db),h=+b.hour,c=+b.court;
    if(!/^\d{4}-\d\d-\d\d$/.test(b.date)||![1,2].includes(c)||!(h>=+s.open&&h<+s.close)||!b.name||!b.phone)return J({error:'Invalid booking'},400);
    const price=h>=+s.peakStart?+s.peakRate:+s.offRate;
-   try{await db.prepare('insert into bookings(court,date,hour,name,phone,ref,price) values(?,?,?,?,?,?,?)').bind(c,b.date,h,String(b.name).slice(0,80),String(b.phone).slice(0,30),String(b.ref||'').slice(0,60),price).run()}
+   let id;
+   try{id=(await db.prepare('insert into bookings(court,date,hour,name,phone,ref,price) values(?,?,?,?,?,?,?)').bind(c,b.date,h,String(b.name).slice(0,80),String(b.phone).slice(0,30),String(b.ref||'').slice(0,60),price).run()).meta.last_row_id}
    catch(e){return J({error:'Sorry, that slot was just taken.'},409)}
-   return J({ok:true,price});
+   return J({ok:true,price,code:'PG-'+(1000+id)});
+  }
+  if(p==='mybooking'&&m==='GET'){
+   const id=parseInt((u.searchParams.get('code')||'').replace(/\D/g,''))-1000,ph=(u.searchParams.get('phone')||'').replace(/\D/g,'').slice(-10);
+   const r=id>0&&ph.length>=7?await db.prepare('select court,date,hour,status,phone from bookings where id=?').bind(id).first():null;
+   if(!r||r.phone.replace(/\D/g,'').slice(-10)!==ph)return J({error:'No booking found. Check your booking code and phone number.'},404);
+   return J({court:r.court,date:r.date,hour:r.hour,status:r.status});
   }
   if(p==='login'&&m==='POST'){
    const b=await request.json();
