@@ -10,9 +10,9 @@ table{width:100%;border-collapse:separate;border-spacing:0 6px}th,td.h{color:var
 .s{width:100%;padding:10px 4px;border-radius:8px;border:1px solid #1f6b46;background:#10261b;color:#4ade80;cursor:pointer}.s.pk{border-color:var(--l)}.s:disabled{background:#222;border-color:#222;color:#666;cursor:default}.s.sel{background:#3a1029;border-color:#e91e8c;color:#ff7ac0}
 .box{background:var(--c);border:1px solid #333;border-radius:12px;padding:14px;margin-top:12px}.box input{width:100%;margin:6px 0}
 .go{width:100%;padding:12px;border:0;border-radius:999px;background:var(--l);color:#000;font-weight:700;cursor:pointer;margin-top:8px}
-.lg{color:var(--m);font-size:12px;margin-top:8px}.ok{color:#4ade80}.err{color:#ff6b6b}.hide{display:none}.gh{margin:18px 0 2px;font-weight:700;color:#4ade80}.gh.pk{color:var(--l)}.ov{position:fixed;inset:0;background:#000c;display:flex;align-items:center;justify-content:center;padding:16px}.ov.hide{display:none}.code{font-size:28px;font-weight:800;color:var(--l);margin:8px 0}
+.lg{color:var(--m);font-size:12px;margin-top:8px}.ok{color:#4ade80}.err{color:#ff6b6b}.hide{display:none}.am{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}.am div{color:#555}.am .on{color:#eee}.am div:before{content:'\25CB  '}.am .on:before{content:'\2713  ';color:var(--l)}.map{width:100%;height:260px;border:0;border-radius:12px}.gh{margin:18px 0 2px;font-weight:700;color:#4ade80}.gh.pk{color:var(--l)}.ov{position:fixed;inset:0;background:#000c;display:flex;align-items:center;justify-content:center;padding:16px}.ov.hide{display:none}.code{font-size:28px;font-weight:800;color:var(--l);margin:8px 0}
 </style></head><body>
-<header><h1 id="nm">Book a Court</h1><p id="tg"></p></header>
+<header><h1 id="nm">Book a Court</h1><p id="tg"></p><div id="fw" class="hide" style="margin-top:8px"><span id="fc" style="color:var(--m)"></span><button class="go" id="fb" style="width:auto;padding:6px 18px;margin:0 0 0 10px">Follow</button></div></header>
 <nav><button class="on" data-t="book">BOOK</button><button data-t="about">ABOUT</button><button data-t="terms">TERMS</button><button data-t="mine">MY BOOKING</button></nav>
 <main>
 <section id="book"><div class="date"><button id="pv">&lt;</button><input type="date" id="dt"><button id="nx">&gt;</button></div>
@@ -21,7 +21,7 @@ table{width:100%;border-collapse:separate;border-spacing:0 6px}th,td.h{color:var
 <input id="n" placeholder="Full name"><input id="p" placeholder="Mobile number"><input id="r" placeholder="Payment reference no. (after you pay)">
 <label><input type="checkbox" id="ag" style="width:auto"> I agree to the <a href="#" id="tl" style="color:var(--l)">Terms</a></label>
 <button class="go" id="bk">Book now</button><div id="ms" class="lg"></div></div></section>
-<section id="about" class="hide"><div class="pre" id="ab"></div><h3>Contact</h3><div class="pre" id="ct"></div></section>
+<section id="about" class="hide"><div class="pre" id="ab"></div><h3>Amenities</h3><div class="am" id="am"></div><h3>Location</h3><div id="loc"></div><h3>Contact</h3><div class="pre" id="ct"></div></section>
 <section id="mine" class="hide"><div class="box"><b>Check your booking</b><p class="lg">Enter the booking code you received and your mobile number.</p><input id="mc" placeholder="Booking code (e.g. PG-1042)"><input id="mp" placeholder="Mobile number"><button class="go" id="ck">Check status</button></div><div id="mo" class="box hide" style="white-space:pre-wrap"></div></section>
 <section id="terms" class="hide"><div class="pre" id="tm"></div><h3>Payment</h3><div class="pre" id="py2"></div></section>
 </main>
@@ -72,5 +72,11 @@ $('#pv').onclick=()=>mv(-1);$('#nx').onclick=()=>mv(1);$('#dt').onchange=()=>{se
 (async()=>{S=await (await fetch('/api/settings')).json();document.title=S.name+' - Book a Court';
  $('#nm').textContent=S.name;$('#tg').textContent=S.tagline;$('#ab').textContent=S.about;$('#ct').textContent=S.contact;
  $('#tm').textContent=S.terms;$('#py2').textContent=S.payment;$('#pay').textContent=S.payment;
- $('#dt').value=iso(new Date());$('#dt').min=iso(new Date());load()})();
+ const AM=[['parking','Parking'],['wifi','WiFi'],['shower','Shower'],['locker','Locker'],['proshop','Pro Shop'],['cafe','Cafe'],['aircon','Air Conditioning'],['accessible','Wheelchair Accessible'],['rental','Equipment Rental'],['coaching','Coaching']],on=(S.amenities||'').split(',');
+ AM.forEach(([k,n])=>{const d=document.createElement('div');d.textContent=n;if(on.includes(k))d.className='on';$('#am').append(d)});
+ if(S.mapq){const f=document.createElement('iframe');f.className='map';f.loading='lazy';f.src='https://maps.google.com/maps?q='+encodeURIComponent(S.mapq)+'&z=16&output=embed';const a=document.createElement('a');a.href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(S.mapq);a.target='_blank';a.rel='noopener';a.textContent='Open in Google Maps';a.style.cssText='color:var(--l);display:inline-block;margin-top:6px';$('#loc').append(f,a)}
+ $('#dt').value=iso(new Date());$('#dt').min=iso(new Date());load();fc()})();
+let did,fol=false;try{did=localStorage.getItem('did');if(!did){did=crypto.randomUUID();localStorage.setItem('did',did)}fol=localStorage.getItem('fol')=='1'}catch(e){did=did||String(Math.random()).slice(2)+'xxxxxxxx'}
+async function fc(){const r=await fetch('/api/follow');if(!r.ok)return;const j=await r.json();$('#fw').classList.remove('hide');$('#fc').textContent=j.count+(j.count==1?' follower':' followers');$('#fb').textContent=fol?'Following':'Follow'}
+$('#fb').onclick=async()=>{const r=await fetch('/api/follow',{method:'POST',body:JSON.stringify({id:did,on:!fol})});if(r.ok){fol=!fol;try{localStorage.setItem('fol',fol?'1':'0')}catch(e){}}else alert((await r.json()).error);fc()};
 </script></body></html>
