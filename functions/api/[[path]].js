@@ -1,6 +1,6 @@
 const J=(d,s=200,h={})=>new Response(JSON.stringify(d),{status:s,headers:{'content-type':'application/json',...h}});
 const hash=async t=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('pg:'+t)))].map(b=>b.toString(16).padStart(2,'0')).join('');
-const DEF={name:'PickleGo Court',tagline:'Stand. Fight. Overcome.',about:'',contact:'',terms:'',payment:'',open:'6',close:'23',peakStart:'17',offRate:'300',peakRate:'350',court1:'Court 1',court2:'Court 2',amenities:'parking,cafe,rental,coaching',mapq:''};
+const DEF={name:'PickleGo Court',tagline:'Stand. Fight. Overcome.',about:'',contact:'',terms:'',payment:'',open:'6',close:'23',peakStart:'17',offRate:'300',peakRate:'350',court1:'Court 1',court2:'Court 2',amenities:'parking,cafe,rental,coaching',mapq:'',logo:'/logo.png',cover:'/cover.jpg',footer:'Powered by Queen of Art | Developer: Almira Bagro | Contact#09774673966'};
 const settings=async db=>{const r=await db.prepare('select k,v from settings').all();const s={...DEF};r.results.forEach(x=>s[x.k]=x.v);return s};
 export async function onRequest({request,env}){
  const u=new URL(request.url),p=u.pathname.replace(/^\/api\//,''),m=request.method,db=env.DB;
