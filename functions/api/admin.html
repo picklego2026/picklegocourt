@@ -1,0 +1,44 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin</title>
+<style>
+:root{--c:#161616;--l:#b6f000;--m:#999}*{box-sizing:border-box}
+body{margin:0;font:15px system-ui,sans-serif;background:#0b0b0b;color:#eee}main{max-width:900px;margin:auto;padding:16px}
+input,textarea{width:100%;background:var(--c);color:#eee;border:1px solid #333;padding:10px;border-radius:8px;font:inherit;margin:4px 0 12px}
+label{color:var(--m);font-size:13px}.go,.sm{border:0;border-radius:999px;background:var(--l);color:#000;font-weight:700;cursor:pointer;padding:10px 18px}
+.sm{padding:6px 12px;font-size:12px;margin-right:4px}.sm:disabled{opacity:.4;cursor:default}.x{background:#ff6b6b}.g{background:#333;color:#eee}.card{background:var(--c);border:1px solid #333;border-radius:12px;padding:14px;margin-bottom:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:6px;border-bottom:1px solid #2a2a2a;text-align:left;white-space:nowrap}.hide{display:none}
+</style></head><body><main>
+<div id="lg" class="card"><h2>Admin login</h2><input id="pw" type="password" placeholder="Password"><button class="go" id="li">Log in</button> <span id="le" style="color:#ff6b6b"></span></div>
+<div id="ad" class="hide"><h2>Venue settings</h2><div class="card" id="fm"></div><button class="go" id="sv">Save changes</button> <span id="so"></span>
+<h2>Bookings</h2><div id="tb" style="margin-bottom:10px"></div>
+<div class="card" style="overflow:auto"><table id="bt"></table></div>
+<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><button class="sm" id="pv">Previous</button><span id="pg" style="color:var(--m);font-size:13px"></span><button class="sm" id="nx">Next</button><a class="sm" style="margin-left:auto;text-decoration:none" href="/api/admin/export">Download Excel file</a></div></div>
+<script>
+const $=s=>document.querySelector(s);
+const F=[['name','Venue name'],['tagline','Tagline'],['about','About (text)',1],['contact','Contact details (phone, address, links)',1],['terms','Terms & conditions',1],['payment','Payment instructions (e.g. GCash name and number)',1],['open','Opening hour (24h, e.g. 6)'],['close','Closing hour (24h, e.g. 23)'],['peakStart','Peak starts at hour (24h, e.g. 17)'],['offRate','Regular rate per hour (PHP)'],['peakRate','Peak rate per hour (PHP)'],['court1','Court 1 name'],['court2','Court 2 name']];
+const TABS=[['pending','Pending'],['confirmed','Confirmed'],['cancelled','Cancelled'],['trash','Trash']];
+const ACT={pending:[['Confirm','confirmed'],['Cancel','cancelled'],['Trash','trash']],confirmed:[['Cancel','cancelled'],['Trash','trash']],cancelled:[['Re-open','pending'],['Trash','trash']],trash:[['Restore','cancelled'],['Delete forever','del']]};
+let tab='pending',pg=0,cnt={};
+const api=(p,b)=>fetch('/api/'+p,b?{method:'POST',body:JSON.stringify(b)}:{});
+async function loadB(){
+ const r=await api('admin/bookings?status='+tab+'&page='+pg);if(r.status==401)return false;
+ const j=await r.json();cnt=j.counts;
+ if(!j.rows.length&&pg>0){pg--;return loadB()}
+ tabs();rows(j.rows);const n=cnt[tab]||0;
+ $('#pg').textContent=n?'Page '+(pg+1)+' of '+Math.ceil(n/25)+' ('+n+' bookings)':'No bookings here';
+ $('#pv').disabled=pg==0;$('#nx').disabled=(pg+1)*25>=n;return true}
+function tabs(){const t=$('#tb');t.innerHTML='';TABS.forEach(([k,n])=>{const b=document.createElement('button');b.className='sm'+(k==tab?'':' g');b.textContent=n+' ('+(cnt[k]||0)+')';b.onclick=()=>{tab=k;pg=0;loadB()};t.append(b)})}
+function rows(L){const t=$('#bt');t.innerHTML='<tr><th>Code</th><th>Date</th><th>Time</th><th>Court</th><th>Name</th><th>Phone</th><th>Ref</th><th>PHP</th><th></th></tr>';
+ L.forEach(b=>{const tr=document.createElement('tr');['PG-'+(1000+b.id),b.date,b.hour+':00','Court '+b.court,b.name,b.phone,b.ref,b.price].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td)});
+  const a=document.createElement('td');ACT[tab].forEach(([n,s])=>{const x=document.createElement('button');x.className='sm'+(s=='cancelled'||s=='trash'||s=='del'?' x':'');x.textContent=n;
+   x.onclick=async()=>{if(s=='del'){if(!confirm('Delete forever? This cannot be undone.'))return;await api('admin/delete',{id:b.id})}
+    else{const r=await api('admin/booking',{id:b.id,status:s});if(!r.ok)alert((await r.json()).error)}loadB()};a.append(x)});tr.append(a);t.append(tr)})}
+$('#pv').onclick=()=>{pg--;loadB()};$('#nx').onclick=()=>{pg++;loadB()};
+async function init(){
+ if(!await loadB())return;
+ $('#lg').classList.add('hide');$('#ad').classList.remove('hide');
+ const S=await (await api('settings')).json();$('#fm').innerHTML='';
+ F.forEach(([k,t,ta])=>{const l=document.createElement('label');l.textContent=t;const e=document.createElement(ta?'textarea':'input');if(ta)e.rows=5;e.id='f_'+k;e.value=S[k];$('#fm').append(l,e)})}
+$('#li').onclick=async()=>{const r=await api('login',{password:$('#pw').value});if(r.ok)init();else $('#le').textContent='Wrong password'};
+$('#sv').onclick=async()=>{const b={};F.forEach(([k])=>b[k]=$('#f_'+k).value);const r=await api('admin/settings',b);$('#so').textContent=r.ok?'Saved!':'Error saving'};
+init();
+</script></main></body></html>
