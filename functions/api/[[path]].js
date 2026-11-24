@@ -1,11 +1,20 @@
 const J=(d,s=200,h={})=>new Response(JSON.stringify(d),{status:s,headers:{'content-type':'application/json',...h}});
 const hash=async t=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('pg:'+t)))].map(b=>b.toString(16).padStart(2,'0')).join('');
-const DEF={name:'PickleGo Court',tagline:'Stand. Fight. Overcome.',about:'',contact:'',terms:'',payment:'',open:'6',close:'23',peakStart:'17',offRate:'300',peakRate:'350',court1:'Court 1',court2:'Court 2'};
+const DEF={name:'PickleGo Court',tagline:'Stand. Fight. Overcome.',about:'',contact:'',terms:'',payment:'',open:'6',close:'23',peakStart:'17',offRate:'300',peakRate:'350',court1:'Court 1',court2:'Court 2',amenities:'parking,cafe,rental,coaching',mapq:''};
 const settings=async db=>{const r=await db.prepare('select k,v from settings').all();const s={...DEF};r.results.forEach(x=>s[x.k]=x.v);return s};
 export async function onRequest({request,env}){
  const u=new URL(request.url),p=u.pathname.replace(/^\/api\//,''),m=request.method,db=env.DB;
  try{
   if(p==='settings'&&m==='GET')return J(await settings(db));
+  if(p==='follow'&&m==='GET')return J({count:(await db.prepare('select count(*) n from follows').first()).n});
+  if(p==='follow'&&m==='POST'){
+   const b=await request.json(),k=String(b.id||'').slice(0,64);if(k.length<8)return J({error:'Invalid'},400);
+   if(b.on){const ip=request.headers.get('cf-connecting-ip')||'';
+    if((await db.prepare('select count(*) n from follows where ip=?').bind(ip).first()).n>=5)return J({error:'Too many follows from this network.'},429);
+    await db.prepare('insert or ignore into follows(k,ip) values(?,?)').bind(k,ip).run()}
+   else await db.prepare('delete from follows where k=?').bind(k).run();
+   return J({ok:true});
+  }
   if(p==='bookings'&&m==='GET')return J((await db.prepare("select court,hour from bookings where date=? and status not in ('cancelled','trash')").bind(u.searchParams.get('date')||'').all()).results);
   if(p==='book'&&m==='POST'){
    const b=await request.json(),s=await settings(db),h=+b.hour,c=+b.court;
