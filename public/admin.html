@@ -8,10 +8,11 @@ label{color:var(--m);font-size:13px}.go,.sm{border:0;border-radius:999px;backgro
 table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:6px;border-bottom:1px solid #2a2a2a;text-align:left;white-space:nowrap}.hide{display:none}
 </style></head><body><main>
 <div id="lg" class="card"><h2>Admin login</h2><input id="pw" type="password" placeholder="Password"><button class="go" id="li">Log in</button> <span id="le" style="color:#ff6b6b"></span></div>
-<div id="ad" class="hide"><h2>Venue settings</h2><div class="card" id="fm"></div><button class="go" id="sv">Save changes</button> <span id="so"></span>
-<h2>Bookings</h2><div id="tb" style="margin-bottom:10px"></div>
+<div id="ad" class="hide"><div id="nv" style="display:flex;gap:8px;margin:6px 0 14px"><button class="go" data-v="pb">Bookings</button><button class="go g" data-v="ps">Venue settings</button></div>
+<div id="ps" class="hide"><h2>Venue settings</h2><div class="card" id="fm"></div><button class="go" id="sv">Save changes</button> <span id="so"></span></div>
+<div id="pb"><h2>Bookings</h2><div id="tb" style="margin-bottom:10px"></div>
 <div class="card" style="overflow:auto"><table id="bt"></table></div>
-<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><button class="sm" id="pv">Previous</button><span id="pg" style="color:var(--m);font-size:13px"></span><button class="sm" id="nx">Next</button><a class="sm" style="margin-left:auto;text-decoration:none" href="/api/admin/export">Download Excel file</a></div></div>
+<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><button class="sm" id="pv">Previous</button><span id="pg" style="color:var(--m);font-size:13px"></span><button class="sm" id="nx">Next</button><a class="sm" style="margin-left:auto;text-decoration:none" href="/api/admin/export">Download Excel file</a></div></div></div>
 <script>
 const $=s=>document.querySelector(s);
 const F=[['name','Venue name'],['tagline','Tagline'],['about','About (text)',1],['contact','Contact details (phone, address, links)',1],['terms','Terms & conditions',1],['payment','Payment instructions (e.g. GCash name and number)',1],['open','Opening hour (24h, e.g. 6)'],['close','Closing hour (24h, e.g. 23)'],['peakStart','Peak starts at hour (24h, e.g. 17)'],['offRate','Regular rate per hour (PHP)'],['peakRate','Peak rate per hour (PHP)'],['court1','Court 1 name'],['court2','Court 2 name']];
@@ -33,9 +34,11 @@ function rows(L){const t=$('#bt');t.innerHTML='<tr><th>Code</th><th>Date</th><th
    x.onclick=async()=>{if(s=='del'){if(!confirm('Delete forever? This cannot be undone.'))return;await api('admin/delete',{id:b.id})}
     else{const r=await api('admin/booking',{id:b.id,status:s});if(!r.ok)alert((await r.json()).error)}loadB()};a.append(x)});tr.append(a);t.append(tr)})}
 $('#pv').onclick=()=>{pg--;loadB()};$('#nx').onclick=()=>{pg++;loadB()};
+function view(v){['pb','ps'].forEach(i=>$('#'+i).classList.toggle('hide',i!=v));document.querySelectorAll('#nv button').forEach(b=>b.classList.toggle('g',b.dataset.v!=v))}
+document.querySelectorAll('#nv button').forEach(b=>b.onclick=()=>view(b.dataset.v));
 async function init(){
  if(!await loadB())return;
- $('#lg').classList.add('hide');$('#ad').classList.remove('hide');
+ $('#lg').classList.add('hide');$('#ad').classList.remove('hide');view('pb');
  const S=await (await api('settings')).json();$('#fm').innerHTML='';
  F.forEach(([k,t,ta])=>{const l=document.createElement('label');l.textContent=t;const e=document.createElement(ta?'textarea':'input');if(ta)e.rows=5;e.id='f_'+k;e.value=S[k];$('#fm').append(l,e)})}
 $('#li').onclick=async()=>{const r=await api('login',{password:$('#pw').value});if(r.ok)init();else $('#le').textContent='Wrong password'};
