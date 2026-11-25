@@ -18,7 +18,7 @@ table{width:100%;border-collapse:separate;border-spacing:0 6px}th,td.h{color:var
 <main>
 <section id="book"><div class="date"><button id="pv">&lt;</button><input type="date" id="dt"><button id="nx">&gt;</button></div>
 <div id="g"></div><div class="lgd"><span><i class="sw" style="background:#10261b;border:1px solid #1f6b46"></i>Available</span><span><i class="sw" style="background:#3a1029;border:2px solid #e91e8c"></i>Selected</span><span><i class="sw" style="background:#222"></i>Booked</span><span><i class="sw" style="background:#10261b;border:2px solid #b6f000"></i>Peak</span></div>
-<div class="box hide" id="f"><b id="sm"></b><div class="pre" id="pay" style="margin:8px 0;color:var(--m)"></div>
+<div class="box hide" id="f"><b id="sm" style="display:block;white-space:pre-line"></b><div class="pre" id="pay" style="margin:8px 0;color:var(--m)"></div>
 <input id="n" placeholder="Full name"><input id="p" placeholder="Mobile number"><input id="r" placeholder="Payment reference no. (after you pay)">
 <label><input type="checkbox" id="ag" style="width:auto"> I agree to the <a href="#" id="tl" style="color:var(--l)">Terms</a></label>
 <button class="go" id="bk">Book now</button><div id="ms" class="lg"></div></div></section>
@@ -27,15 +27,17 @@ table{width:100%;border-collapse:separate;border-spacing:0 6px}th,td.h{color:var
 <section id="terms" class="hide"><div class="pre" id="tm"></div><h3>Payment</h3><div class="pre" id="py2"></div></section>
 </main>
 <footer id="ft" class="lg hide" style="text-align:center;padding:24px 16px;border-top:1px solid #222;margin-top:24px"></footer>
-<div id="pop" class="ov hide"><div class="box" style="max-width:380px;text-align:center"><h3 style="margin:0">Booking received!</h3><div class="lg">Your booking code</div><div class="code" id="pc"></div><div id="pd" style="margin-bottom:8px"></div><p class="lg">Please wait for the venue to confirm your payment. Take a screenshot of this code. You can check your status anytime under the MY BOOKING tab.</p><button class="go" id="po">OK</button></div></div>
+<div id="pop" class="ov hide"><div class="box" style="max-width:380px;text-align:center"><h3 style="margin:0">Booking received!</h3><div class="lg">Your booking code</div><div class="code" id="pc"></div><div id="pd" style="margin-bottom:8px;white-space:pre-line"></div><p class="lg">Please wait for the venue to confirm your payment. Take a screenshot of this code. You can check your status anytime under the MY BOOKING tab.</p><button class="go" id="po">OK</button></div></div>
 <script>
-const $=s=>document.querySelector(s);let S,B=[],sel=null;
+const $=s=>document.querySelector(s);let S,B=[],sel=[];
 const fmt=h=>(h%12||12)+(h<12?' AM':' PM');
 const iso=d=>d.toLocaleDateString('en-CA');
 function tab(t){document.querySelectorAll('section').forEach(e=>e.classList.toggle('hide',e.id!=t));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t==t))}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>tab(b.dataset.t));
 $('#tl').onclick=e=>{e.preventDefault();tab('terms')};
 async function load(){B=await (await fetch('/api/bookings?date='+$('#dt').value)).json();draw()}
+const price=h=>h>=+S.peakStart?+S.peakRate:+S.offRate,cn=c=>c==1?S.court1:S.court2,srt=a=>[...a].sort((x,y)=>x.h-y.h||x.c-y.c);
+function sum(){const f=$('#f');if(!sel.length){f.classList.add('hide');return}f.classList.remove('hide');$('#sm').textContent=$('#dt').value+'\n'+srt(sel).map(x=>cn(x.c)+' | '+fmt(x.h)+' - '+fmt(x.h+1)+' | PHP '+price(x.h)).join('\n')+'\nTotal: PHP '+sel.reduce((t,x)=>t+price(x.h),0);$('#ms').textContent=''}
 function draw(){
  const d=$('#dt').value,now=new Date(),isT=d==iso(now),g=$('#g');g.innerHTML='';
  const o=+S.open,cl=+S.close,ps=Math.min(Math.max(+S.peakStart,o),cl);
@@ -48,29 +50,29 @@ function draw(){
     b.className='s'+(pk?' pk':'');b.textContent='PHP '+(pk?S.peakRate:S.offRate);
     const taken=B.some(x=>x.court==c&&x.hour==h)||(isT&&h<=now.getHours());
     if(taken){b.disabled=true;b.textContent='-'}
-    if(sel&&sel.c==c&&sel.h==h&&sel.d==d){b.classList.add('sel');b.textContent='Selected'}
-    b.onclick=()=>{sel={c,h,d};draw();$('#f').classList.remove('hide');$('#sm').textContent=(c==1?S.court1:S.court2)+' | '+d+' | '+fmt(h)+' - '+fmt(h+1)+' | PHP '+(pk?S.peakRate:S.offRate);$('#ms').textContent=''};
+    if(sel.some(x=>x.c==c&&x.h==h)){b.classList.add('sel');b.textContent='Selected'}
+    b.onclick=()=>{const i=sel.findIndex(x=>x.c==c&&x.h==h);if(i>=0)sel.splice(i,1);else if(sel.length>=8){alert('You can book up to 8 hours at a time.');return}else sel.push({c,h});draw();sum()};
     td.append(b);tr.append(td)});tb.append(tr)}
   g.append(tb)})
 }
 $('#bk').onclick=async()=>{
  const m=$('#ms');m.className='lg';
- if(!sel)return;if(!$('#n').value||!$('#p').value){m.textContent='Please enter your name and mobile number.';m.className='lg err';return}
+ if(!sel.length)return;if(!$('#n').value||!$('#p').value){m.textContent='Please enter your name and mobile number.';m.className='lg err';return}
  if(!$('#ag').checked){m.textContent='Please agree to the Terms.';m.className='lg err';return}
- const r=await fetch('/api/book',{method:'POST',body:JSON.stringify({court:sel.c,hour:sel.h,date:sel.d,name:$('#n').value,phone:$('#p').value,ref:$('#r').value})});
+ const r=await fetch('/api/book',{method:'POST',body:JSON.stringify({slots:sel,date:$('#dt').value,name:$('#n').value,phone:$('#p').value,ref:$('#r').value})});
  const j=await r.json();
- if(r.ok){const s2=sel;sel=null;$('#f').classList.add('hide');$('#ag').checked=false;pop(j.code,s2,$('#p').value);await load()}
+ if(r.ok){const s2=[...sel],d2=$('#dt').value;sel=[];$('#f').classList.add('hide');$('#ag').checked=false;pop(j.code,s2,$('#p').value,d2,j.price);await load()}
  else{m.textContent=j.error;m.className='lg err';load()}
 };
-function pop(code,s,ph){$('#pc').textContent=code;$('#pd').textContent=(s.c==1?S.court1:S.court2)+' | '+s.d+' | '+fmt(s.h)+' - '+fmt(s.h+1);$('#mc').value=code;$('#mp').value=ph;$('#pop').classList.remove('hide')}
+function pop(code,s,ph,d,tot){$('#pc').textContent=code;$('#pd').textContent=d+'\n'+srt(s).map(x=>cn(x.c)+' | '+fmt(x.h)+' - '+fmt(x.h+1)).join('\n')+'\nTotal: PHP '+tot;$('#mc').value=code;$('#mp').value=ph;$('#pop').classList.remove('hide')}
 $('#po').onclick=()=>{$('#pop').classList.add('hide');tab('mine')};
 $('#ck').onclick=async()=>{const o=$('#mo');o.className='box';o.textContent='Checking...';
  const r=await fetch('/api/mybooking?code='+encodeURIComponent($('#mc').value)+'&phone='+encodeURIComponent($('#mp').value));const j=await r.json();
  if(!r.ok){o.textContent=j.error;o.className='box err';return}
  const t={pending:'PENDING - waiting for the venue to confirm your payment.',confirmed:'CONFIRMED - see you at the court!',cancelled:'CANCELLED - please contact the venue.'};
- o.textContent=(j.court==1?S.court1:S.court2)+' | '+j.date+' | '+fmt(j.hour)+' - '+fmt(j.hour+1)+'\n'+t[j.status];o.className='box '+(j.status=='confirmed'?'ok':j.status=='cancelled'?'err':'')};
-const mv=n=>{const d=new Date($('#dt').value+'T00:00');d.setDate(d.getDate()+n);if(iso(d)<iso(new Date()))return;$('#dt').value=iso(d);sel=null;load()};
-$('#pv').onclick=()=>mv(-1);$('#nx').onclick=()=>mv(1);$('#dt').onchange=()=>{sel=null;load()};
+ o.textContent=j.items.map(x=>x.date+' | '+cn(x.court)+' | '+fmt(x.hour)+' - '+fmt(x.hour+1)).join('\n')+'\n'+t[j.status];o.className='box '+(j.status=='confirmed'?'ok':j.status=='cancelled'?'err':'')};
+const mv=n=>{const d=new Date($('#dt').value+'T00:00');d.setDate(d.getDate()+n);if(iso(d)<iso(new Date()))return;$('#dt').value=iso(d);sel=[];sum();load()};
+$('#pv').onclick=()=>mv(-1);$('#nx').onclick=()=>mv(1);$('#dt').onchange=()=>{sel=[];sum();load()};
 (async()=>{S=await (await fetch('/api/settings')).json();document.title=S.name+' - Book a Court';
  const pic=(i,src,box)=>{if(!src)return;i.onload=()=>(box||i.parentNode).classList.remove('hide');i.src=src};
  pic($('#ci'),S.cover,$('#cv'));pic($('#lo'),S.logo,$('#lw'));

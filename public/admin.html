@@ -5,7 +5,7 @@ body{margin:0;font:15px system-ui,sans-serif;background:#0b0b0b;color:#eee}main{
 input,textarea{width:100%;background:var(--c);color:#eee;border:1px solid #333;padding:10px;border-radius:8px;font:inherit;margin:4px 0 12px}
 label{color:var(--m);font-size:13px}.go,.sm{border:0;border-radius:999px;background:var(--l);color:#000;font-weight:700;cursor:pointer;padding:10px 18px}
 .sm{padding:6px 12px;font-size:12px;margin-right:4px}.sm:disabled{opacity:.4;cursor:default}.x{background:#ff6b6b}.g{background:#333;color:#eee}.card{background:var(--c);border:1px solid #333;border-radius:12px;padding:14px;margin-bottom:12px}
-table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:6px;border-bottom:1px solid #2a2a2a;text-align:left;white-space:nowrap}.hide{display:none}
+table{width:100%;border-collapse:collapse;font-size:13px}td:nth-child(3){white-space:normal;min-width:190px}td,th{padding:6px;border-bottom:1px solid #2a2a2a;text-align:left;white-space:nowrap}.hide{display:none}
 </style></head><body><main>
 <div id="lg" class="card"><h2>Admin login</h2><input id="pw" type="password" placeholder="Password"><button class="go" id="li">Log in</button> <span id="le" style="color:#ff6b6b"></span></div>
 <div id="ad" class="hide"><div id="nv" style="display:flex;gap:8px;margin:6px 0 14px"><button class="go" data-v="pb">Bookings</button><button class="go g" data-v="ps">Venue settings</button></div>
@@ -29,11 +29,11 @@ async function loadB(){
  $('#pg').textContent=n?'Page '+(pg+1)+' of '+Math.ceil(n/25)+' ('+n+' bookings)':'No bookings here';
  $('#pv').disabled=pg==0;$('#nx').disabled=(pg+1)*25>=n;return true}
 function tabs(){const t=$('#tb');t.innerHTML='';TABS.forEach(([k,n])=>{const b=document.createElement('button');b.className='sm'+(k==tab?'':' g');b.textContent=n+' ('+(cnt[k]||0)+')';b.onclick=()=>{tab=k;pg=0;loadB()};t.append(b)})}
-function rows(L){const t=$('#bt');t.innerHTML='<tr><th>Code</th><th>Date</th><th>Time</th><th>Court</th><th>Name</th><th>Phone</th><th>Ref</th><th>PHP</th><th></th></tr>';
- L.forEach(b=>{const tr=document.createElement('tr');['PG-'+(1000+b.id),b.date,b.hour+':00','Court '+b.court,b.name,b.phone,b.ref,b.price].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td)});
+function rows(L){const t=$('#bt');t.innerHTML='<tr><th>Code</th><th>Date</th><th>Slots</th><th>Name</th><th>Phone</th><th>Ref</th><th>PHP</th><th></th></tr>';
+ L.forEach(b=>{const tr=document.createElement('tr');['PG-'+(1000+b.g),b.date,b.slots.split(';').map(x=>x.split('|').map(Number)).sort((p,q)=>p[1]-q[1]||p[0]-q[0]).map(([c,h])=>'Court '+c+' '+h+':00').join('; '),b.name,b.phone,b.ref,b.price].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td)});
   const a=document.createElement('td');ACT[tab].forEach(([n,s])=>{const x=document.createElement('button');x.className='sm'+(s=='cancelled'||s=='trash'||s=='del'?' x':'');x.textContent=n;
-   x.onclick=async()=>{if(s=='del'){if(!confirm('Delete forever? This cannot be undone.'))return;await api('admin/delete',{id:b.id})}
-    else{const r=await api('admin/booking',{id:b.id,status:s});if(!r.ok)alert((await r.json()).error)}loadB()};a.append(x)});tr.append(a);t.append(tr)})}
+   x.onclick=async()=>{if(s=='del'){if(!confirm('Delete forever? This cannot be undone.'))return;await api('admin/delete',{id:b.g})}
+    else{const r=await api('admin/booking',{id:b.g,status:s});if(!r.ok)alert((await r.json()).error)}loadB()};a.append(x)});tr.append(a);t.append(tr)})}
 $('#pv').onclick=()=>{pg--;loadB()};$('#nx').onclick=()=>{pg++;loadB()};
 function view(v){['pb','ps'].forEach(i=>$('#'+i).classList.toggle('hide',i!=v));document.querySelectorAll('#nv button').forEach(b=>b.classList.toggle('g',b.dataset.v!=v))}
 document.querySelectorAll('#nv button').forEach(b=>b.onclick=()=>view(b.dataset.v));
