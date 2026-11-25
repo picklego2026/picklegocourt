@@ -51,6 +51,19 @@ export async function onRequest({request,env}){
    const counts={};(await db.prepare('select status,count(distinct coalesce(grp,id)) n from bookings group by status').all()).results.forEach(x=>counts[x.status]=x.n);
    return J({rows,counts});
   }
+  if(p==='admin/sales'&&m==='GET'){
+   const f=u.searchParams.get('from')||'',t=u.searchParams.get('to')||'',by=u.searchParams.get('by')||'day',re=/^\d{4}-\d\d-\d\d$/;
+   if(!re.test(f)||!re.test(t)||f>t)return J({error:'Pick a valid date range.'},400);
+   const days=Math.round((Date.parse(t)-Date.parse(f))/864e5)+1;if(days>800)return J({error:'Please pick a range of up to 800 days.'},400);
+   const P=d=>d.toISOString().slice(0,10),pt=new Date(Date.parse(f)-864e5),pf=new Date(Date.parse(f)-days*864e5);
+   const ke={day:'date',week:"date(date,'weekday 0','-6 days')",month:'substr(date,1,7)'}[by]||'date',W="status='confirmed' and date between ? and ?";
+   const sm=(a,b)=>db.prepare('select coalesce(sum(price),0) rev,count(*) slots,count(distinct coalesce(grp,id)) bk from bookings where '+W).bind(a,b).first();
+   const [cur,prev,series,courts,rows]=await Promise.all([sm(f,t),sm(P(pf),P(pt)),
+    db.prepare('select '+ke+' k,sum(price) rev,count(*) slots from bookings where '+W+' group by k order by k').bind(f,t).all(),
+    db.prepare('select court,sum(price) rev,count(*) slots from bookings where '+W+' group by court').bind(f,t).all(),
+    db.prepare('select coalesce(grp,id) g,date,hour,court,name,phone,ref,price from bookings where '+W+' order by date,hour,court limit 5000').bind(f,t).all()]);
+   return J({cur,prev,days,series:series.results,courts:courts.results,rows:rows.results});
+  }
   if(p==='admin/export'&&m==='GET'){
    const rs=(await db.prepare("select * from bookings where status!='trash' order by date,hour").all()).results;
    const q=v=>{v=String(v??'');if(/^[=+\-@]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"'};
