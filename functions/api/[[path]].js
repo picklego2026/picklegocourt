@@ -17,6 +17,7 @@ export async function onRequest({request,env}){
    else await db.prepare('delete from follows where k=?').bind(k).run();
    return J({ok:true});
   }
+  if(p==='promos'&&m==='GET'){try{return J((await db.prepare('select court,date_from,date_to,h_from,h_to,rate,name from promos where active=1 and date_to>=?').bind(new Date().toISOString().slice(0,10)).all()).results)}catch(e){return J([])}}
   if(p==='bookings'&&m==='GET')return J((await db.prepare("select court,hour from bookings where date=? and status not in ('cancelled','trash')").bind(u.searchParams.get('date')||'').all()).results);
   if(p==='book'&&m==='POST'){
    const b=await request.json(),s=await settings(db);
@@ -24,13 +25,14 @@ export async function onRequest({request,env}){
    if(!/^\d{4}-\d\d-\d\d$/.test(b.date)||!b.name||!b.phone||!sl.length||sl.length>8||sl.some(x=>![1,2].includes(x.c)||!(x.h>=+s.open&&x.h<+s.close)))return J({error:'Invalid booking'},400);
    const ph=String(b.phone).slice(0,30);
    if((await db.prepare("select count(*) n from bookings where phone=? and status='pending'").bind(ph).first()).n+sl.length>12)return J({error:'Too many unpaid bookings. Please wait for the venue to confirm your payment.'},429);
-   const pr=h=>h>=+s.peakStart?+s.peakRate:+s.offRate;
+   let pm=[];try{pm=(await db.prepare('select court,date_from,date_to,h_from,h_to,rate from promos where active=1').all()).results}catch(e){}
+   const pr=(c,h)=>{const r=pm.filter(x=>(!x.court||x.court==c)&&b.date>=x.date_from&&b.date<=x.date_to&&h>=x.h_from&&h<x.h_to).map(x=>x.rate);return r.length?Math.min(...r):(h>=+s.peakStart?+s.peakRate:+s.offRate)};
    let res;
-   try{res=await db.batch(sl.map(x=>db.prepare('insert into bookings(court,date,hour,name,phone,ref,price) values(?,?,?,?,?,?,?)').bind(x.c,b.date,x.h,String(b.name).slice(0,80),ph,String(b.ref||'').slice(0,60),pr(x.h))))}
+   try{res=await db.batch(sl.map(x=>db.prepare('insert into bookings(court,date,hour,name,phone,ref,price) values(?,?,?,?,?,?,?)').bind(x.c,b.date,x.h,String(b.name).slice(0,80),ph,String(b.ref||'').slice(0,60),pr(x.c,x.h))))}
    catch(e){return J({error:'Sorry, one of those slots was just taken. Please pick again.'},409)}
    const ids=res.map(r=>r.meta.last_row_id),g=ids[0];
    if(ids.length>1)await db.prepare('update bookings set grp=? where id in ('+ids.map(()=>'?').join(',')+')').bind(g,...ids).run();
-   return J({ok:true,price:sl.reduce((t,x)=>t+pr(x.h),0),code:'PG-'+(1000+g)});
+   return J({ok:true,price:sl.reduce((t,x)=>t+pr(x.c,x.h),0),code:'PG-'+(1000+g)});
   }
   if(p==='mybooking'&&m==='GET'){
    const g=parseInt((u.searchParams.get('code')||'').replace(/\D/g,''))-1000,ph=(u.searchParams.get('phone')||'').replace(/\D/g,'').slice(-10);
@@ -63,6 +65,21 @@ export async function onRequest({request,env}){
     db.prepare('select court,sum(price) rev,count(*) slots from bookings where '+W+' group by court').bind(f,t).all(),
     db.prepare('select coalesce(grp,id) g,date,hour,court,name,phone,ref,price from bookings where '+W+' order by date,hour,court limit 5000').bind(f,t).all()]);
    return J({cur,prev,days,series:series.results,courts:courts.results,rows:rows.results});
+  }
+  if(p==='admin/today'&&m==='GET'){
+   const d=u.searchParams.get('date')||'';if(!/^\d{4}-\d\d-\d\d$/.test(d))return J({error:'Bad date'},400);
+   return J((await db.prepare("select coalesce(grp,id) g,court,hour,name,phone,status,price from bookings where date=? and status in ('pending','confirmed') order by hour,court").bind(d).all()).results);
+  }
+  if(p==='admin/promos'&&m==='GET')return J((await db.prepare('select * from promos order by id desc').all()).results);
+  if(p==='admin/promo'&&m==='POST'){
+   const b=await request.json(),re=/^\d{4}-\d\d-\d\d$/,rate=+b.rate,hf=+b.h_from,ht=+b.h_to,c=+b.court;
+   if(!String(b.name||'').trim()||![0,1,2].includes(c)||!re.test(b.date_from)||!re.test(b.date_to)||b.date_from>b.date_to||!(hf>=0&&ht<=24&&ht>hf)||!(rate>=0)||b.rate==='')return J({error:'Please fill in every promo field correctly.'},400);
+   await db.prepare('insert into promos(name,court,date_from,date_to,h_from,h_to,rate) values(?,?,?,?,?,?,?)').bind(String(b.name).slice(0,60),c,b.date_from,b.date_to,hf,ht,Math.round(rate)).run();return J({ok:true});
+  }
+  if(p==='admin/promo-set'&&m==='POST'){
+   const b=await request.json();
+   if(b.del)await db.prepare('delete from promos where id=?').bind(b.id).run();else await db.prepare('update promos set active=? where id=?').bind(b.active?1:0,b.id).run();
+   return J({ok:true});
   }
   if(p==='admin/export'&&m==='GET'){
    const rs=(await db.prepare("select * from bookings where status!='trash' order by date,hour").all()).results;
