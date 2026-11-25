@@ -1,16 +1,31 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin</title>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PickleGo Admin</title>
+<link rel="icon" type="image/png" href="/logo.png"><link rel="apple-touch-icon" href="/logo.png">
 <style>
 :root{--c:#161616;--l:#b6f000;--m:#999}*{box-sizing:border-box}
-body{margin:0;font:15px system-ui,sans-serif;background:#0b0b0b;color:#eee}main{max-width:900px;margin:auto;padding:16px}
-input,textarea{width:100%;background:var(--c);color:#eee;border:1px solid #333;padding:10px;border-radius:8px;font:inherit;margin:4px 0 12px}
+body{margin:0;font:15px system-ui,sans-serif;background:#0b0b0b;color:#eee}main{max-width:960px;margin:auto;padding:16px}
+input,textarea,select{width:100%;background:var(--c);color:#eee;border:1px solid #333;padding:10px;border-radius:8px;font:inherit;margin:4px 0 12px}
 label{color:var(--m);font-size:13px}.go,.sm{border:0;border-radius:999px;background:var(--l);color:#000;font-weight:700;cursor:pointer;padding:10px 18px}
 .sm{padding:6px 12px;font-size:12px;margin-right:4px}.sm:disabled{opacity:.4;cursor:default}.x{background:#ff6b6b}.g{background:#333;color:#eee}.card{background:var(--c);border:1px solid #333;border-radius:12px;padding:14px;margin-bottom:12px}
-table{width:100%;border-collapse:collapse;font-size:13px}td:nth-child(3){white-space:normal;min-width:190px}td,th{padding:6px;border-bottom:1px solid #2a2a2a;text-align:left;white-space:nowrap}#lg{max-width:400px;margin:10vh auto 0;text-align:center;padding:26px 22px}#lg .pwb input{text-align:left}#lg .go{width:100%}.alogo{width:92px;height:92px;border-radius:50%;object-fit:cover;border:3px solid #222;background:#0b0b0b;margin-bottom:10px}.hide{display:none}.fr{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}.dt{width:auto;margin:0}.kp{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:12px}.kc{background:var(--c);border:1px solid #333;border-radius:12px;padding:14px}.chart{display:flex;align-items:flex-end;gap:2px;height:170px;margin:10px 0}.bar{flex:1;min-width:2px;border-radius:3px 3px 0 0}.pwb{position:relative}.pwb input{padding-right:48px;margin-bottom:12px}.eye{position:absolute;right:8px;top:9px;background:none;border:0;color:#bbb;cursor:pointer;padding:4px}#toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#ff6b6b;color:#000;font-weight:700;padding:12px 20px;border-radius:12px;z-index:9;box-shadow:0 6px 20px #000a}
+table{width:100%;border-collapse:collapse;font-size:13px}td:nth-child(3){white-space:normal;min-width:190px}td,th{padding:6px;border-bottom:1px solid #2a2a2a;text-align:left;white-space:nowrap}#lg{max-width:400px;margin:10vh auto 0;text-align:center;padding:26px 22px}#lg .pwb input{text-align:left}#lg .go{width:100%}.alogo{width:92px;height:92px;border-radius:50%;object-fit:cover;border:3px solid #222;background:#0b0b0b;margin-bottom:10px}.hide{display:none}#ad h2{text-align:center}#tb{text-align:center}#sv,#xl{display:block;margin:12px auto}#so{display:block;text-align:center}.g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.fr{display:flex;justify-content:center;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}.dt{width:auto;margin:0}.kp{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:12px}.kc{background:var(--c);border:1px solid #333;border-radius:12px;padding:14px}.chart{display:flex;align-items:flex-end;gap:2px;height:170px;margin:10px 0}.bar{flex:1;min-width:2px;border-radius:3px 3px 0 0}.pwb{position:relative}.pwb input{padding-right:48px;margin-bottom:12px}.eye{position:absolute;right:8px;top:9px;background:none;border:0;color:#bbb;cursor:pointer;padding:4px}#toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#ff6b6b;color:#000;font-weight:700;padding:12px 20px;border-radius:12px;z-index:9;box-shadow:0 6px 20px #000a}
 </style></head><body><main>
 <div id="toast" class="hide"></div>
 <div id="lg" class="card"><img src="/logo.png" class="alogo" alt="" onerror="this.style.display='none'"><h2 style="margin:0 0 4px">Welcome to PickleGo Court</h2><div style="color:var(--l);font-weight:700;margin-bottom:6px">Admin Login</div><p style="color:var(--m);font-size:13px;line-height:1.5;margin:0 0 16px">This page is for admin use only. Editing the website and managing bookings is done here. Please enter your admin password to continue.</p><div class="pwb"><input id="pw" type="password" placeholder="Password" autocomplete="current-password"><button type="button" class="eye" id="ey" title="Show or hide password"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/><path id="sl" class="hide" d="M3 3l18 18"/></svg></button></div><button class="go" id="li">Log in</button> <span id="le" style="color:#ff6b6b"></span><div style="margin-top:14px;font-size:12px;color:var(--m)">Are you a customer? <a href="/" style="color:var(--l)">Go to the booking page</a></div></div>
-<div id="ad" class="hide"><div id="nv" style="display:flex;gap:8px;margin:6px 0 14px"><button class="go" data-v="pb">Bookings</button><button class="go g" data-v="pl">Sales</button><button class="go g" data-v="ps">Venue settings</button><button class="go g" id="lo" style="margin-left:auto">Log out</button></div>
+<div id="ad" class="hide"><div id="nv" style="display:flex;gap:8px;margin:6px 0 14px;flex-wrap:wrap;justify-content:center"><button class="go" data-v="pb">Bookings</button><button class="go g" data-v="pt">Today</button><button class="go g" data-v="pl">Sales</button><button class="go g" data-v="pm">Promotions</button><button class="go g" data-v="ps">Venue settings</button><button class="go g" id="lo">Log out</button></div>
 <div id="ps" class="hide"><h2>Venue settings</h2><div class="card" id="fm"></div><button class="go" id="sv">Save changes</button> <span id="so"></span></div>
+<div id="pt" class="hide"><h2>Today</h2>
+<div class="card"><div class="fr"><button class="sm" id="tp">&lt;</button><input type="date" id="td" class="dt"><button class="sm" id="tn">&gt;</button><button class="sm g" id="tt">Today</button></div></div>
+<div class="card" style="overflow:auto"><table id="tbl"></table></div>
+<div class="card" id="tsum" style="font-size:13px;text-align:center"></div></div>
+<div id="pm" class="hide"><h2>Promotions</h2>
+<p style="color:var(--m);font-size:13px;text-align:center;margin-top:0">A promo replaces the normal price for the court, dates, and hours you choose. Customers see it on the booking calendar.</p>
+<div class="card"><b>Create a promo</b><div class="g2" style="margin-top:8px">
+<div><label>Promo name</label><input id="pr_n" placeholder="e.g. Weekday morning promo"></div>
+<div><label>Court</label><select id="pr_c"><option value="0">Both courts</option><option value="1">Court 1</option><option value="2">Court 2</option></select></div>
+<div><label>From date</label><input type="date" id="pr_f"></div><div><label>To date</label><input type="date" id="pr_t"></div>
+<div><label>From hour (24h, e.g. 9)</label><input type="number" min="0" max="23" id="pr_hf"></div><div><label>To hour (24h, e.g. 12)</label><input type="number" min="1" max="24" id="pr_ht"></div>
+<div><label>Promo rate per hour (PHP)</label><input type="number" min="0" id="pr_r"></div></div>
+<button class="go" id="pr_go" style="margin-top:6px">Create promo</button></div>
+<div class="card" style="overflow:auto"><table id="prt"></table></div></div>
 <div id="pl" class="hide"><h2>Sales</h2>
 <div class="card"><div class="fr"><label>From</label><input type="date" id="sf" class="dt"><label>To</label><input type="date" id="st" class="dt"></div>
 <div class="fr" id="qk"><button class="sm g" data-q="today">Today</button><button class="sm g" data-q="week">This week</button><button class="sm g" data-q="month">This month</button><button class="sm g" data-q="30">Last 30 days</button><button class="sm g" data-q="year">This year</button></div>
@@ -22,7 +37,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}td:nth-child(3){white-s
 <button class="go" id="xl">Download Excel file</button></div>
 <div id="pb"><h2>Bookings</h2><div id="tb" style="margin-bottom:10px"></div>
 <div class="card" style="overflow:auto"><table id="bt"></table></div>
-<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><button class="sm" id="pv">Previous</button><span id="pg" style="color:var(--m);font-size:13px"></span><button class="sm" id="nx">Next</button><a class="sm" style="margin-left:auto;text-decoration:none" href="/api/admin/export">Download Excel file</a></div></div></div>
+<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center"><button class="sm" id="pv">Previous</button><span id="pg" style="color:var(--m);font-size:13px"></span><button class="sm" id="nx">Next</button><a class="sm" style="text-decoration:none" href="/api/admin/export">Download Excel file</a></div></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 const $=s=>document.querySelector(s);
@@ -81,17 +96,34 @@ $('#xl').onclick=()=>{if(!SD)return;if(!window.XLSX){toast('Excel tool did not l
  SD.rows.forEach(r=>s2.push(['PG-'+(1000+r.g),r.date,r.hour+':00','Court '+r.court,r.name,r.phone,r.ref,r.price]));
  XLSX.utils.book_append_sheet(w,XLSX.utils.aoa_to_sheet(s1),'Sales summary');XLSX.utils.book_append_sheet(w,XLSX.utils.aoa_to_sheet(s2),'Bookings');
  XLSX.writeFile(w,'picklego-sales-'+f+'_to_'+t+'.xlsx')};
-function view(v){['pb','pl','ps'].forEach(i=>$('#'+i).classList.toggle('hide',i!=v));if(v=='pl')initS();document.querySelectorAll('#nv button').forEach(b=>b.classList.toggle('g',b.dataset.v!=v))}
+let SS=null;
+async function loadT(){const d=$('#td').value;if(!d||!SS)return;const r=await api('admin/today?date='+d);if(!r.ok){toast('Could not load the schedule.');return}const L=await r.json();
+ const t=$('#tbl');t.innerHTML='';const hr=document.createElement('tr');['Time',SS.court1,SS.court2].forEach(v=>{const th=document.createElement('th');th.textContent=v;hr.append(th)});t.append(hr);
+ for(let h=+SS.open;h<+SS.close;h++){const tr=document.createElement('tr'),a=document.createElement('td');a.textContent=h+':00 - '+(h+1)+':00';tr.append(a);
+  [1,2].forEach(c=>{const td=document.createElement('td'),b=L.find(x=>x.court==c&&x.hour==h);td.style.whiteSpace='normal';
+   if(b){td.textContent=b.name+' ('+b.phone+') - '+b.status;td.style.color=b.status=='confirmed'?'#4ade80':'#ffb84d'}else{td.textContent='open';td.style.color='#555'}tr.append(td)});t.append(tr)}
+ const cf=L.filter(x=>x.status=='confirmed'),pd=L.filter(x=>x.status=='pending');
+ $('#tsum').textContent='Confirmed: '+cf.length+' hour(s), '+fm(cf.reduce((s,x)=>s+x.price,0))+'     |     Pending: '+pd.length+' hour(s)'}
+const sh=n=>{const d=new Date($('#td').value+'T00:00');d.setDate(d.getDate()+n);$('#td').value=LD(d);loadT()};
+$('#tp').onclick=()=>sh(-1);$('#tn').onclick=()=>sh(1);$('#tt').onclick=()=>{$('#td').value=LD(new Date());loadT()};$('#td').onchange=loadT;
+async function loadP(){const r=await api('admin/promos');if(!r.ok){toast('Promotions are not ready yet. Ask the developer to finish the setup step.');return}
+ const L=await r.json(),t=$('#prt');t.innerHTML='<tr><th>Name</th><th>Court</th><th>Dates</th><th>Hours</th><th>Rate</th><th>Status</th><th></th></tr>';
+ L.forEach(x=>{const tr=document.createElement('tr');[x.name,x.court?'Court '+x.court:'Both courts',x.date_from+' to '+x.date_to,x.h_from+':00 - '+x.h_to+':00','PHP '+x.rate,x.active?'Active':'Paused'].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td)});
+  const a=document.createElement('td');[[x.active?'Pause':'Resume',()=>api('admin/promo-set',{id:x.id,active:!x.active})],['Delete',async()=>{if(confirm('Delete this promo?'))await api('admin/promo-set',{id:x.id,del:1})}]].forEach(([n,f],i)=>{const b=document.createElement('button');b.className='sm'+(i?' x':'');b.textContent=n;b.onclick=async()=>{await f();loadP()};a.append(b)});tr.append(a);t.append(tr)});
+ if(!L.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=7;td.textContent='No promos yet.';td.style.color='#999';tr.append(td);t.append(tr)}}
+$('#pr_go').onclick=async()=>{const r=await api('admin/promo',{name:$('#pr_n').value,court:$('#pr_c').value,date_from:$('#pr_f').value,date_to:$('#pr_t').value,h_from:$('#pr_hf').value,h_to:$('#pr_ht').value,rate:$('#pr_r').value});
+ const j=await r.json();if(!r.ok){toast(j.error||'Error');return}['n','f','t','hf','ht','r'].forEach(k=>$('#pr_'+k).value='');toast('Promo created!',true);loadP()};
+function view(v){['pb','pt','pl','pm','ps'].forEach(i=>$('#'+i).classList.toggle('hide',i!=v));if(v=='pl')initS();if(v=='pm')loadP();if(v=='pt'){if(!$('#td').value)$('#td').value=LD(new Date());loadT()}document.querySelectorAll('#nv button').forEach(b=>b.classList.toggle('g',b.dataset.v!=v))}
 document.querySelectorAll('#nv button').forEach(b=>b.onclick=()=>view(b.dataset.v));
 async function init(){
  if(!await loadB())return;
  $('#lg').classList.add('hide');$('#ad').classList.remove('hide');view('pb');
- const S=await (await api('settings')).json();$('#fm').innerHTML='';
+ const S=await (await api('settings')).json();SS=S;$('#fm').innerHTML='';
  F.forEach(([k,t,ta])=>{const l=document.createElement('label');l.textContent=t;const e=document.createElement(ta?'textarea':'input');if(ta)e.rows=5;e.id='f_'+k;e.value=S[k];$('#fm').append(l,e)});
  const al=document.createElement('label');al.textContent='Amenities (tick what the venue has)';$('#fm').append(al);
  const ad=document.createElement('div');ad.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;margin:6px 0';
  AM.forEach(([k,n])=>{const l=document.createElement('label');l.style.color='#eee';const c=document.createElement('input');c.type='checkbox';c.id='a_'+k;c.style.cssText='width:auto;margin:0 6px 0 0';c.checked=(S.amenities||'').split(',').includes(k);l.append(c,n);ad.append(l)});$('#fm').append(ad)}
-function toast(t){const e=$('#toast');e.textContent=t;e.classList.remove('hide');clearTimeout(window.tt);window.tt=setTimeout(()=>e.classList.add('hide'),3500)}
+function toast(t,ok){const e=$('#toast');e.textContent=t;e.style.background=ok?'#4ade80':'#ff6b6b';e.classList.remove('hide');clearTimeout(window.tt);window.tt=setTimeout(()=>e.classList.add('hide'),3500)}
 $('#li').onclick=async()=>{if(!$('#pw').value){toast('Please type your password.');return}
  const r=await api('login',{password:$('#pw').value});
  if(r.ok){$('#pw').value='';init()}else{toast('Wrong password. Please try again.');$('#pw').focus();$('#pw').select()}};
