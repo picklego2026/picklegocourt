@@ -38,6 +38,7 @@ export async function onRequest({request,env}){
    if(!rs.length||rs[0].phone.replace(/\D/g,'').slice(-10)!==ph)return J({error:'No booking found. Check your booking code and phone number.'},404);
    return J({items:rs.map(r=>({court:r.court,date:r.date,hour:r.hour})),status:rs[0].status});
   }
+  if(p==='logout'&&m==='POST')return J({ok:true},200,{'set-cookie':'adm=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0'});
   if(p==='login'&&m==='POST'){
    const b=await request.json();
    if(!env.ADMIN_PASSWORD||b.password!==env.ADMIN_PASSWORD)return J({error:'Wrong password'},401);
