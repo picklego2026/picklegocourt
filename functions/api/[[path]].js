@@ -17,19 +17,24 @@ export async function onRequest({request,env}){
   }
   if(p==='bookings'&&m==='GET')return J((await db.prepare("select court,hour from bookings where date=? and status not in ('cancelled','trash')").bind(u.searchParams.get('date')||'').all()).results);
   if(p==='book'&&m==='POST'){
-   const b=await request.json(),s=await settings(db),h=+b.hour,c=+b.court;
-   if(!/^\d{4}-\d\d-\d\d$/.test(b.date)||![1,2].includes(c)||!(h>=+s.open&&h<+s.close)||!b.name||!b.phone)return J({error:'Invalid booking'},400);
-   const price=h>=+s.peakStart?+s.peakRate:+s.offRate;
-   let id;
-   try{id=(await db.prepare('insert into bookings(court,date,hour,name,phone,ref,price) values(?,?,?,?,?,?,?)').bind(c,b.date,h,String(b.name).slice(0,80),String(b.phone).slice(0,30),String(b.ref||'').slice(0,60),price).run()).meta.last_row_id}
-   catch(e){return J({error:'Sorry, that slot was just taken.'},409)}
-   return J({ok:true,price,code:'PG-'+(1000+id)});
+   const b=await request.json(),s=await settings(db);
+   const sl=(Array.isArray(b.slots)?b.slots:[{court:b.court,hour:b.hour}]).map(x=>({c:+(x.c??x.court),h:+(x.h??x.hour)}));
+   if(!/^\d{4}-\d\d-\d\d$/.test(b.date)||!b.name||!b.phone||!sl.length||sl.length>8||sl.some(x=>![1,2].includes(x.c)||!(x.h>=+s.open&&x.h<+s.close)))return J({error:'Invalid booking'},400);
+   const ph=String(b.phone).slice(0,30);
+   if((await db.prepare("select count(*) n from bookings where phone=? and status='pending'").bind(ph).first()).n+sl.length>12)return J({error:'Too many unpaid bookings. Please wait for the venue to confirm your payment.'},429);
+   const pr=h=>h>=+s.peakStart?+s.peakRate:+s.offRate;
+   let res;
+   try{res=await db.batch(sl.map(x=>db.prepare('insert into bookings(court,date,hour,name,phone,ref,price) values(?,?,?,?,?,?,?)').bind(x.c,b.date,x.h,String(b.name).slice(0,80),ph,String(b.ref||'').slice(0,60),pr(x.h))))}
+   catch(e){return J({error:'Sorry, one of those slots was just taken. Please pick again.'},409)}
+   const ids=res.map(r=>r.meta.last_row_id),g=ids[0];
+   if(ids.length>1)await db.prepare('update bookings set grp=? where id in ('+ids.map(()=>'?').join(',')+')').bind(g,...ids).run();
+   return J({ok:true,price:sl.reduce((t,x)=>t+pr(x.h),0),code:'PG-'+(1000+g)});
   }
   if(p==='mybooking'&&m==='GET'){
-   const id=parseInt((u.searchParams.get('code')||'').replace(/\D/g,''))-1000,ph=(u.searchParams.get('phone')||'').replace(/\D/g,'').slice(-10);
-   const r=id>0&&ph.length>=7?await db.prepare('select court,date,hour,status,phone from bookings where id=?').bind(id).first():null;
-   if(!r||r.status==='trash'||r.phone.replace(/\D/g,'').slice(-10)!==ph)return J({error:'No booking found. Check your booking code and phone number.'},404);
-   return J({court:r.court,date:r.date,hour:r.hour,status:r.status});
+   const g=parseInt((u.searchParams.get('code')||'').replace(/\D/g,''))-1000,ph=(u.searchParams.get('phone')||'').replace(/\D/g,'').slice(-10);
+   const rs=g>0&&ph.length>=7?(await db.prepare("select court,date,hour,status,phone from bookings where (id=? or grp=?) and status!='trash' order by hour,court").bind(g,g).all()).results:[];
+   if(!rs.length||rs[0].phone.replace(/\D/g,'').slice(-10)!==ph)return J({error:'No booking found. Check your booking code and phone number.'},404);
+   return J({items:rs.map(r=>({court:r.court,date:r.date,hour:r.hour})),status:rs[0].status});
   }
   if(p==='login'&&m==='POST'){
    const b=await request.json();
@@ -39,23 +44,23 @@ export async function onRequest({request,env}){
   if(!env.ADMIN_PASSWORD||!(request.headers.get('cookie')||'').includes('adm='+await hash(env.ADMIN_PASSWORD)))return J({error:'Unauthorized'},401);
   if(p==='admin/bookings'&&m==='GET'){
    const st=u.searchParams.get('status')||'pending',pg=Math.max(0,+u.searchParams.get('page')||0);
-   const rows=(await db.prepare('select * from bookings where status=? order by date desc,hour desc limit 25 offset ?').bind(st,pg*25).all()).results;
-   const counts={};(await db.prepare('select status,count(*) n from bookings group by status').all()).results.forEach(x=>counts[x.status]=x.n);
+   const rows=(await db.prepare("select coalesce(grp,id) g,min(date) date,group_concat(court||'|'||hour,';') slots,name,phone,ref,sum(price) price,status from bookings where status=? group by g order by min(date) desc,min(hour) desc limit 25 offset ?").bind(st,pg*25).all()).results;
+   const counts={};(await db.prepare('select status,count(distinct coalesce(grp,id)) n from bookings group by status').all()).results.forEach(x=>counts[x.status]=x.n);
    return J({rows,counts});
   }
   if(p==='admin/export'&&m==='GET'){
    const rs=(await db.prepare("select * from bookings where status!='trash' order by date,hour").all()).results;
    const q=v=>{v=String(v??'');if(/^[=+\-@]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"'};
-   const csv='\ufeff'+['Code,Date,Time,Court,Name,Phone,Reference,Price,Status,Booked at'].concat(rs.map(b=>['PG-'+(1000+b.id),b.date,b.hour+':00','Court '+b.court,b.name,b.phone,b.ref,b.price,b.status,b.created].map(q).join(','))).join('\r\n');
+   const csv='\ufeff'+['Code,Date,Time,Court,Name,Phone,Reference,Price,Status,Booked at'].concat(rs.map(b=>['PG-'+(1000+(b.grp||b.id)),b.date,b.hour+':00','Court '+b.court,b.name,b.phone,b.ref,b.price,b.status,b.created].map(q).join(','))).join('\r\n');
    return new Response(csv,{headers:{'content-type':'text/csv; charset=utf-8','content-disposition':'attachment; filename="picklego-bookings.csv"'}});
   }
   if(p==='admin/delete'&&m==='POST'){
-   const b=await request.json();await db.prepare("delete from bookings where id=? and status='trash'").bind(b.id).run();return J({ok:true});
+   const b=await request.json();await db.prepare("delete from bookings where coalesce(grp,id)=? and status='trash'").bind(b.id).run();return J({ok:true});
   }
   if(p==='admin/booking'&&m==='POST'){
    const b=await request.json();
    if(!['pending','confirmed','cancelled','trash'].includes(b.status))return J({error:'Bad status'},400);
-   try{await db.prepare('update bookings set status=? where id=?').bind(b.status,b.id).run()}catch(e){return J({error:'That time slot is already booked by someone else.'},409)}
+   try{await db.prepare('update bookings set status=? where coalesce(grp,id)=?').bind(b.status,b.id).run()}catch(e){return J({error:'That time slot is already booked by someone else.'},409)}
    return J({ok:true});
   }
   if(p==='admin/settings'&&m==='POST'){
